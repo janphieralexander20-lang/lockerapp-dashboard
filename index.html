@@ -228,6 +228,134 @@
       let opciones = { margin: 10, filename: 'Reporte_Global.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
       html2pdf().set(opciones).from(elemento).save();
     }
+    // Variables globales para las descargas
+    let currentBase64 = "";
+    let currentFileName = "";
+
+    async function cargarPanel() {
+      try {
+        const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
+        let contratos = resContratos.ok ? await resContratos.json() : [];
+
+        const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
+        let reportes = resReportes.ok ? await resReportes.json() : [];
+        
+        let totalIngresos = contratos.length * 10000; 
+        document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
+        document.getElementById('kpi-contratos').innerText = contratos.length;
+
+        const tabla = document.getElementById('tabla-contratos');
+        
+        if (contratos.length === 0) {
+          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados aún.</td></tr>`;
+          return;
+        }
+
+        tabla.innerHTML = contratos.map(c => {
+          // ESCUDO PROTECTOR PARA CORREOS VACÍOS
+          const correoSeguro = c.correo || "estudiante@sin-correo.cl";
+          const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
+
+          const tieneFalla = reportes.some(r => r.accion.includes(c.n_casillero) || r.correo === correoSeguro);
+          const estadoHTML = tieneFalla 
+            ? `<span class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-black animate-pulse border border-red-200 shadow-sm">🚨 Falla Reportada</span>`
+            : `<span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-black border border-green-200 shadow-sm">✅ Operativo</span>`;
+
+          return `
+          <tr class="hover:bg-purple-50 transition-colors fila-alumno">
+            <td class="p-4">
+              <p class="font-bold text-gray-800 text-sm nombre-alumno">${nombreLimpio}</p>
+              <p class="text-xs text-gray-500">${correoSeguro}</p>
+            </td>
+            <td class="p-4">
+              <p class="font-black text-purple-700 text-lg locker-alumno">Locker #${c.n_casillero || 'N/A'}</p>
+              <p class="text-xs text-gray-500 uppercase font-bold">${c.piso || 'Sede Central'}</p>
+            </td>
+            <td class="p-4 text-center">
+              <div class="flex justify-center gap-2">
+                <button onclick="abrirVisor('Comprobante', '${c.comprobanteBase64}', '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                  💰 Pago
+                </button>
+                <button onclick="abrirVisor('Firma', '${c.firmaBase64}', '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                  ✍️ Firma
+                </button>
+              </div>
+            </td>
+            <td class="p-4 text-center">
+              ${estadoHTML}
+            </td>
+          </tr>
+        `}).join('');
+
+      } catch (error) {
+        console.error("Error cargando base de datos:", error);
+      }
+    }
+
+    function abrirVisor(tipo, base64Str, alumno) {
+      if (!base64Str || base64Str === "undefined" || base64Str === "null") {
+        alert("Este documento no fue subido o está vacío en la base de datos de pruebas.");
+        return;
+      }
+      currentBase64 = base64Str.startsWith('data:image') ? base64Str : 'data:image/png;base64,' + base64Str;
+      currentFileName = `${tipo}_${alumno}`;
+      document.getElementById('modal-titulo').innerText = tipo;
+      document.getElementById('modal-subtitulo').innerText = `Estudiante: ${alumno}`;
+      document.getElementById('modal-img').src = currentBase64;
+      document.getElementById('modal-doc').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-doc').classList.add('hidden');
+    }
+
+    function descargarIndividual(formato) {
+      if (formato === 'png') {
+        const link = document.createElement('a');
+        link.href = currentBase64;
+        link.download = `${currentFileName}.png`;
+        link.click();
+      } else if (formato === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.text(`Documento: ${currentFileName}`, 10, 10);
+        pdf.addImage(currentBase64, 'PNG', 10, 20, 180, 0); 
+        pdf.save(`${currentFileName}.pdf`);
+      }
+    }
+
+    function filtrarTabla() {
+      const input = document.getElementById("buscador").value.toUpperCase();
+      const filas = document.querySelectorAll(".fila-alumno");
+      filas.forEach(fila => {
+        const nombre = fila.querySelector(".nombre-alumno").innerText.toUpperCase();
+        const locker = fila.querySelector(".locker-alumno").innerText.toUpperCase();
+        if (nombre.indexOf(input) > -1 || locker.indexOf(input) > -1) {
+          fila.style.display = "";
+        } else {
+          fila.style.display = "none";
+        }
+      });
+    }
+
+    function alertaReseteo() {
+      alert("🚨 Para formatear: Ve a Supabase > Table Editor y limpia la tabla 'contratos_firmados' y 'historial_accesos'.");
+    }
+
+    function exportarExcel() {
+      let tabla = document.getElementById("tabla-exportar");
+      let libro = XLSX.utils.table_to_book(tabla, {sheet: "Base_de_Datos"});
+      XLSX.writeFile(libro, "Contratos_Global_LockerApp.xlsx");
+    }
+
+    function exportarPDF() {
+      let elemento = document.getElementById("area-imprimir");
+      let opciones = { margin: 10, filename: 'Reporte_Global.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+      html2pdf().set(opciones).from(elemento).save();
+    }
+
+    cargarPanel();
+    setInterval(cargarPanel, 15000);
 
     cargarPanel();
     setInterval(cargarPanel, 15000); // Refresca cada 15 seg
