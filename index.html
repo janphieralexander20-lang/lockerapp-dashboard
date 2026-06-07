@@ -100,17 +100,20 @@
     async function cargarPanel() {
       const tabla = document.getElementById('tabla-contratos');
       try {
+        // 1. Obtener los contratos activos
         const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
         let contratos = resContratos.ok ? await resContratos.json() : [];
 
+        // 2. Obtener las alertas técnicas desde la nueva tabla dedicada
         let reportes = [];
         try {
           const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
           if (resReportes.ok) reportes = await resReportes.json();
         } catch (e) {
-          console.log("Servidor de reportes cargando...", e);
+          console.log("Esperando respuesta del servidor de reportes...", e);
         }
         
+        // Actualizar contadores del FEUST
         let totalIngresos = contratos.length * 10000; 
         document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
         document.getElementById('kpi-contratos').innerText = contratos.length;
@@ -120,11 +123,14 @@
           return;
         }
 
+        // Estructurar filas resguardando campos nulos de pruebas anteriores
         tabla.innerHTML = contratos.map(c => {
           const correoSeguro = c.correo || "estudiante@sin-correo.cl";
           const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
           const nLocker = c.n_casillero || 'N/A';
+          const pisoSeguro = c.piso || 'Sede Central';
 
+          // Comparación cruzada inteligente con la nueva tabla reportes_fallas
           const tieneFalla = reportes.some(r => {
             const accionStr = r.accion ? String(r.accion) : "";
             return accionStr.includes(String(nLocker)) || r.correo === correoSeguro;
@@ -142,7 +148,7 @@
             </td>
             <td class="p-4">
               <p class="font-black text-purple-700 text-lg locker-alumno">Locker #${nLocker}</p>
-              <p class="text-xs text-gray-500 uppercase font-bold">${c.piso || 'Sede Central'}</p>
+              <p class="text-xs text-gray-500 uppercase font-bold">${pisoSeguro}</p>
             </td>
             <td class="p-4 text-center">
               <div class="flex justify-center gap-2">
@@ -161,8 +167,8 @@
         `}).join('');
 
       } catch (error) {
-        console.error("Error detectado:", error);
-        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización. Asegúrate de que el backend en Render esté encendido.</td></tr>`;
+        console.error("Error en la carga:", error);
+        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización. Asegúrate de que el backend en Render esté activo.</td></tr>`;
       }
     }
 
@@ -228,8 +234,9 @@
       html2pdf().set(opciones).from(elemento).save();
     }
 
+    // Ejecución inicial sincrónica
     cargarPanel();
-    setInterval(cargarPanel, 15000);
+    setInterval(cargarPanel, 10000); // Actualización en tiempo real cada 10 seg
   </script>
 </body>
 </html>
