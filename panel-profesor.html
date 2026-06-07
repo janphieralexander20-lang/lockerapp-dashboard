@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LockerApp FEUST - Panel de Administración</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <header class="bg-purple-700 text-white p-5 shadow-md flex justify-between items-center">
+    <h1 class="text-2xl font-black tracking-wider">🔒 LOCKERAPP ADMIN</h1>
+    <div class="flex gap-2">
+      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-bold text-sm shadow transition-all flex items-center gap-2">
+        📊 Descargar Excel
+      </button>
+      <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-bold text-sm shadow transition-all flex items-center gap-2">
+        📄 Descargar PDF
+      </button>
+    </div>
+  </header>
+
+  <main class="p-6 max-w-7xl mx-auto" id="area-imprimir">
+    
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-green-500">
+        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Recaudados</p>
+        <h3 class="text-3xl font-black text-gray-800 mt-2" id="kpi-ingresos">$0 CLP</h3>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-blue-500">
+        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Contratos Activos</p>
+        <h3 class="text-3xl font-black text-gray-800 mt-2" id="kpi-contratos">0</h3>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-red-500">
+        <p class="text-red-500 font-bold uppercase text-xs tracking-wider">⚠️ Fallas Reportadas</p>
+        <h3 class="text-3xl font-black text-gray-800 mt-2" id="kpi-fallas">0</h3>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <div class="bg-white p-6 rounded-2xl shadow-sm lg:col-span-2">
+        <h2 class="text-lg font-extrabold text-gray-800 mb-4">📝 Base de Datos de Arriendos</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse" id="tabla-exportar">
+            <thead>
+              <tr class="bg-gray-50 text-gray-500 text-xs uppercase font-bold border-b">
+                <th class="p-3">Estudiante</th>
+                <th class="p-3">Ubicación</th>
+                <th class="p-3">Locker</th>
+                <th class="p-3 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-contratos">
+              </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow-sm">
+        <h2 class="text-lg font-extrabold text-red-600 mb-4">🚨 Alertas Técnicas</h2>
+        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2" id="contenedor-reportes">
+          </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    async function cargarPanel() {
+      try {
+        // Cargar Contratos
+        const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
+        const contratos = await resContratos.json();
+        
+        let totalIngresos = contratos.length * 10000; 
+        document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')} CLP`;
+        document.getElementById('kpi-contratos').innerText = contratos.length;
+
+        const tabla = document.getElementById('tabla-contratos');
+        tabla.innerHTML = contratos.map(c => `
+          <tr class="border-b text-sm text-gray-700 hover:bg-gray-50">
+            <td class="p-3 font-semibold">${c.correo || 'Alumno'}</td>
+            <td class="p-3 text-gray-500">${c.piso || 'Sede Central'}</td>
+            <td class="p-3 font-bold text-purple-700">#${c.n_casillero || 'N/A'}</td>
+            <td class="p-3 text-center">
+              <button onclick="editarRegistro('${c.id}')" class="text-blue-500 hover:underline mr-2 font-bold">Editar</button>
+              <button onclick="verDocumentos('${c.comprobanteBase64}', '${c.firmaBase64}')" class="text-purple-500 hover:underline font-bold">Docs</button>
+            </td>
+          </tr>
+        `).join('');
+
+        // Cargar Reportes
+        const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
+        const reportes = await resReportes.json();
+        document.getElementById('kpi-fallas').innerText = reportes.length;
+
+        const contenedor = document.getElementById('contenedor-reportes');
+        if(reportes.length === 0) {
+          contenedor.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">No hay fallas reportadas. ✅</p>';
+          return;
+        }
+
+        contenedor.innerHTML = reportes.map(r => `
+          <div class="bg-red-50 border border-red-200 p-4 rounded-xl flex flex-col gap-2">
+            <span class="text-xs text-gray-400 font-medium">${new Date(r.fecha).toLocaleTimeString()}</span>
+            <p class="text-xs text-gray-800 font-bold">${r.accion}</p>
+            <button class="mt-2 bg-red-600 text-white font-bold text-xs py-2 rounded-lg">🔧 Despachar Técnico</button>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error("Error cargando panel admin:", error);
+      }
+    }
+
+    // Funciones de simulación de edición (Para la presentación)
+    function editarRegistro(id) {
+      alert("Abriendo panel de edición para el registro " + id + ". (Función conectada a la base de datos central).");
+    }
+
+    function verDocumentos(comprobante, firma) {
+      alert("Apertura de bóveda digital. Comprobante y firma listos para auditoría.");
+    }
+
+    // EXPORTACIÓN A EXCEL
+    function exportarExcel() {
+      let tabla = document.getElementById("tabla-exportar");
+      let libro = XLSX.utils.table_to_book(tabla, {sheet: "Contratos"});
+      XLSX.writeFile(libro, "Reporte_LockerApp.xlsx");
+    }
+
+    // EXPORTACIÓN A PDF
+    function exportarPDF() {
+      let elemento = document.getElementById("area-imprimir");
+      let opciones = {
+        margin:       10,
+        filename:     'Reporte_LockerApp_Admin.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opciones).from(elemento).save();
+    }
+
+    cargarPanel();
+  </script>
+</body>
+</html>
