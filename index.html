@@ -22,9 +22,6 @@
       <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">
         📄 PDF Global
       </button>
-      <button onclick="alertaReseteo()" class="bg-gray-900 hover:bg-black px-4 py-2 rounded-lg font-bold text-sm shadow-md border border-gray-600 transition-all">
-        ⚠️ Formatear Pruebas
-      </button>
     </div>
   </header>
 
@@ -74,14 +71,11 @@
   <div id="modal-doc" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 backdrop-blur-sm transition-all">
     <div class="bg-white rounded-2xl p-6 w-11/12 max-w-lg text-center relative shadow-2xl">
       <button onclick="cerrarModal()" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-3xl font-black">&times;</button>
-      
       <h3 id="modal-titulo" class="text-2xl font-black text-purple-800 mb-1">Documento</h3>
       <p id="modal-subtitulo" class="text-sm text-gray-500 mb-6 font-semibold">Visualización Segura</p>
-      
       <div class="bg-gray-100 rounded-lg p-2 mb-6 min-h-[200px] flex items-center justify-center border border-gray-200">
         <img id="modal-img" src="" alt="Documento" class="max-h-80 mx-auto rounded shadow-sm">
       </div>
-
       <div class="flex justify-center gap-4">
         <button onclick="descargarIndividual('png')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
           🖼️ Bajar PNG
@@ -100,37 +94,32 @@
     async function cargarPanel() {
       const tabla = document.getElementById('tabla-contratos');
       try {
-        // 1. Obtener los contratos activos
         const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
         let contratos = resContratos.ok ? await resContratos.json() : [];
 
-        // 2. Obtener las alertas técnicas desde la nueva tabla dedicada
         let reportes = [];
         try {
           const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
           if (resReportes.ok) reportes = await resReportes.json();
         } catch (e) {
-          console.log("Esperando respuesta del servidor de reportes...", e);
+          console.log("Servidor de reportes respondiendo...", e);
         }
         
-        // Actualizar contadores del FEUST
         let totalIngresos = contratos.length * 10000; 
         document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
         document.getElementById('kpi-contratos').innerText = contratos.length;
         
         if (contratos.length === 0) {
-          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados aún en la base de datos.</td></tr>`;
+          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados en esta tabla aún.</td></tr>`;
           return;
         }
 
-        // Estructurar filas resguardando campos nulos de pruebas anteriores
         tabla.innerHTML = contratos.map(c => {
           const correoSeguro = c.correo || "estudiante@sin-correo.cl";
           const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
           const nLocker = c.n_casillero || 'N/A';
           const pisoSeguro = c.piso || 'Sede Central';
 
-          // Comparación cruzada inteligente con la nueva tabla reportes_fallas
           const tieneFalla = reportes.some(r => {
             const accionStr = r.accion ? String(r.accion) : "";
             return accionStr.includes(String(nLocker)) || r.correo === correoSeguro;
@@ -167,14 +156,14 @@
         `}).join('');
 
       } catch (error) {
-        console.error("Error en la carga:", error);
-        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización. Asegúrate de que el backend en Render esté activo.</td></tr>`;
+        console.error("Error detectado:", error);
+        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización con el servidor de Render.</td></tr>`;
       }
     }
 
     function abrirVisor(tipo, base64Str, alumno) {
       if (!base64Str || base64Str === "undefined" || base64Str === "null") {
-        alert("Este documento no está disponible o no se cargó correctamente en las pruebas.");
+        alert("Este documento no está disponible.");
         return;
       }
       currentBase64 = base64Str.startsWith('data:image') ? base64Str : 'data:image/png;base64,' + base64Str;
@@ -218,10 +207,6 @@
       });
     }
 
-    function alertaReseteo() {
-      alert("🚨 Modo Pruebas: Para vaciar los registros, limpia las tablas directo en el Table Editor de Supabase.");
-    }
-
     function exportarExcel() {
       let tabla = document.getElementById("tabla-exportar");
       let libro = XLSX.utils.table_to_book(tabla, {sheet: "Base_de_Datos"});
@@ -234,9 +219,8 @@
       html2pdf().set(opciones).from(elemento).save();
     }
 
-    // Ejecución inicial sincrónica
     cargarPanel();
-    setInterval(cargarPanel, 10000); // Actualización en tiempo real cada 10 seg
+    setInterval(cargarPanel, 15000);
   </script>
 </body>
 </html>
