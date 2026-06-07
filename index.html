@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LockerApp FEUST - Panel de Administración</title>
+  <title>LockerApp FEUST - Panel Administrativo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-50 font-sans text-gray-800">
 
-  <header class="bg-purple-800 text-white p-5 shadow-lg flex justify-between items-center">
+  <header class="bg-gradient-to-r from-purple-800 to-purple-600 text-white p-5 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
     <h1 class="text-2xl font-black tracking-wider flex items-center gap-2">
       <span>🔒</span> LOCKERAPP ADMIN
     </h1>
-    <div class="flex gap-3">
-      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded font-bold text-sm shadow transition-all">
-        📊 Descargar Excel
+    <div class="flex flex-wrap justify-center gap-3">
+      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">
+        📊 Excel Global
       </button>
-      <button onclick="exportarPDF()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-bold text-sm shadow transition-all">
-        📄 Descargar PDF
+      <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">
+        📄 PDF Global
       </button>
-      <button onclick="alertaReseteo()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-bold text-sm shadow transition-all border border-red-400">
+      <button id="btn-formatear" onclick="alertaReseteo()" class="bg-gray-900 hover:bg-black px-4 py-2 rounded-lg font-bold text-sm shadow-md border border-gray-600 transition-all">
         ⚠️ Formatear Pruebas
       </button>
     </div>
@@ -30,22 +31,29 @@
   <main class="p-6 max-w-7xl mx-auto" id="area-imprimir">
     
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-xl shadow-sm border-l-8 border-green-500">
-        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Recaudados (FEUST)</p>
-        <h3 class="text-4xl font-black text-gray-800 mt-2" id="kpi-ingresos">$0</h3>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-green-500 flex justify-between items-center">
+        <div>
+          <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Ingresos Recaudados (FEUST)</p>
+          <h3 class="text-4xl font-black text-gray-800 mt-1" id="kpi-ingresos">$0</h3>
+        </div>
+        <div class="text-green-200 text-5xl">💰</div>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow-sm border-l-8 border-blue-500">
-        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Contratos Universitarios Activos</p>
-        <h3 class="text-4xl font-black text-gray-800 mt-2" id="kpi-contratos">0</h3>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-blue-500 flex justify-between items-center">
+        <div>
+          <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Contratos Activos</p>
+          <h3 class="text-4xl font-black text-gray-800 mt-1" id="kpi-contratos">0</h3>
+        </div>
+        <div class="text-blue-200 text-5xl">📝</div>
       </div>
     </section>
 
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
-      <div class="p-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+      <div class="p-6 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
         <h2 class="text-xl font-extrabold text-gray-800">📚 Base de Datos de Arriendos</h2>
+        <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="🔍 Buscar alumno o locker..." class="px-4 py-2 rounded-lg border border-gray-300 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-purple-500">
       </div>
       
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto min-h-[300px]">
         <table class="w-full text-left border-collapse" id="tabla-exportar">
           <thead>
             <tr class="bg-purple-900 text-white text-xs uppercase font-bold tracking-wider">
@@ -55,27 +63,49 @@
               <th class="p-4 text-center">Estado Técnico</th>
             </tr>
           </thead>
-          <tbody id="tabla-contratos" class="divide-y divide-gray-200">
-            </tbody>
+          <tbody id="tabla-contratos" class="divide-y divide-gray-100">
+            <tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">Cargando base de datos segura...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </main>
 
+  <div id="modal-doc" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 backdrop-blur-sm transition-all">
+    <div class="bg-white rounded-2xl p-6 w-11/12 max-w-lg text-center relative shadow-2xl">
+      <button onclick="cerrarModal()" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-3xl font-black">&times;</button>
+      
+      <h3 id="modal-titulo" class="text-2xl font-black text-purple-800 mb-1">Documento</h3>
+      <p id="modal-subtitulo" class="text-sm text-gray-500 mb-6 font-semibold">Visualización Segura</p>
+      
+      <div class="bg-gray-100 rounded-lg p-2 mb-6 min-h-[200px] flex items-center justify-center border border-gray-200">
+        <img id="modal-img" src="" alt="Documento" class="max-h-80 mx-auto rounded shadow-sm">
+      </div>
+
+      <div class="flex justify-center gap-4">
+        <button onclick="descargarIndividual('png')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+          🖼️ Bajar PNG
+        </button>
+        <button onclick="descargarIndividual('pdf')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+          📄 Bajar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Variables globales para las descargas individuales
+    let currentBase64 = "";
+    let currentFileName = "";
+
     async function cargarPanel() {
       try {
-        // Cargar Contratos
         const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
-        let contratos = [];
-        if (resContratos.ok) contratos = await resContratos.json();
+        let contratos = resContratos.ok ? await resContratos.json() : [];
 
-        // Cargar Reportes (Para saber si hay fallas)
         const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
-        let reportes = [];
-        if (resReportes.ok) reportes = await resReportes.json();
+        let reportes = resReportes.ok ? await resReportes.json() : [];
         
-        // Actualizar KPIs
         let totalIngresos = contratos.length * 10000; 
         document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
         document.getElementById('kpi-contratos').innerText = contratos.length;
@@ -83,34 +113,36 @@
         const tabla = document.getElementById('tabla-contratos');
         
         if (contratos.length === 0) {
-          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-500 font-bold">No hay contratos registrados aún en la base de datos.</td></tr>`;
+          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados aún.</td></tr>`;
           return;
         }
 
+        // Generamos la tabla. Nota: inyectamos la base64 directamente en el botón
         tabla.innerHTML = contratos.map(c => {
-          // Verificar si este locker en particular tiene un reporte de falla
           const tieneFalla = reportes.some(r => r.accion.includes(c.n_casillero) || r.correo === c.correo);
-          
           const estadoHTML = tieneFalla 
-            ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">🚨 Requiere Técnico</span>`
-            : `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">✅ Operativo</span>`;
+            ? `<span class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-black animate-pulse border border-red-200 shadow-sm">🚨 Falla Reportada</span>`
+            : `<span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-black border border-green-200 shadow-sm">✅ Operativo</span>`;
 
+          const nombreLimpio = c.correo.split('@')[0].toUpperCase();
+
+          // Botones con los datos ocultos para abrirlos en el visor
           return `
-          <tr class="hover:bg-gray-50 transition-colors">
+          <tr class="hover:bg-purple-50 transition-colors fila-alumno">
             <td class="p-4">
-              <p class="font-bold text-gray-800 text-sm">${c.correo.split('@')[0].toUpperCase()}</p>
+              <p class="font-bold text-gray-800 text-sm nombre-alumno">${nombreLimpio}</p>
               <p class="text-xs text-gray-500">${c.correo}</p>
             </td>
             <td class="p-4">
-              <p class="font-bold text-purple-700 text-lg">Locker #${c.n_casillero || 'N/A'}</p>
-              <p class="text-xs text-gray-500 uppercase font-semibold">${c.piso || 'Sede Central'}</p>
+              <p class="font-black text-purple-700 text-lg locker-alumno">Locker #${c.n_casillero || 'N/A'}</p>
+              <p class="text-xs text-gray-500 uppercase font-bold">${c.piso || 'Sede Central'}</p>
             </td>
             <td class="p-4 text-center">
               <div class="flex justify-center gap-2">
-                <button onclick="verDoc('Comprobante')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
-                  💰 Comprobante
+                <button onclick="abrirVisor('Comprobante', '${c.comprobanteBase64}', '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                  💰 Pago
                 </button>
-                <button onclick="verDoc('Firma')" class="bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                <button onclick="abrirVisor('Firma', '${c.firmaBase64}', '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
                   ✍️ Firma
                 </button>
               </div>
@@ -126,28 +158,79 @@
       }
     }
 
-    function verDoc(tipo) {
-      alert(`Abriendo bóveda de seguridad: Mostrando ${tipo} del estudiante para auditoría.`);
+    // --- FUNCIONES DEL VISOR INDIVIDUAL DE DOCUMENTOS ---
+    function abrirVisor(tipo, base64Str, alumno) {
+      if (!base64Str || base64Str === "undefined" || base64Str === "null") {
+        alert("Este documento no fue subido o está dañado.");
+        return;
+      }
+      
+      // Guardamos los datos para poder descargarlos luego
+      currentBase64 = base64Str.startsWith('data:image') ? base64Str : 'data:image/png;base64,' + base64Str;
+      currentFileName = `${tipo}_${alumno}`;
+
+      document.getElementById('modal-titulo').innerText = tipo;
+      document.getElementById('modal-subtitulo').innerText = `Estudiante: ${alumno}`;
+      document.getElementById('modal-img').src = currentBase64;
+      
+      document.getElementById('modal-doc').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-doc').classList.add('hidden');
+    }
+
+    function descargarIndividual(formato) {
+      if (formato === 'png') {
+        const link = document.createElement('a');
+        link.href = currentBase64;
+        link.download = `${currentFileName}.png`;
+        link.click();
+      } else if (formato === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.text(`Documento: ${currentFileName}`, 10, 10);
+        // Ajustamos la imagen al PDF
+        pdf.addImage(currentBase64, 'PNG', 10, 20, 180, 0); 
+        pdf.save(`${currentFileName}.pdf`);
+      }
+    }
+
+    // --- BUSCADOR EN TIEMPO REAL ---
+    function filtrarTabla() {
+      const input = document.getElementById("buscador").value.toUpperCase();
+      const filas = document.querySelectorAll(".fila-alumno");
+      
+      filas.forEach(fila => {
+        const nombre = fila.querySelector(".nombre-alumno").innerText.toUpperCase();
+        const locker = fila.querySelector(".locker-alumno").innerText.toUpperCase();
+        if (nombre.indexOf(input) > -1 || locker.indexOf(input) > -1) {
+          fila.style.display = "";
+        } else {
+          fila.style.display = "none";
+        }
+      });
     }
 
     function alertaReseteo() {
-      alert("🚨 MODO PRESENTACIÓN 🚨\n\nPara vaciar el panel y dejarlo en cero para tu profesor, abre el 'Table Editor' en tu cuenta de Supabase y borra las filas de la tabla 'contratos_firmados'. El panel se actualizará automáticamente.");
+      alert("🚨 Puedes borrar este botón desde el código antes de la presentación.");
     }
 
+    // --- EXPORTACIONES GLOBALES (TODA LA TABLA) ---
     function exportarExcel() {
       let tabla = document.getElementById("tabla-exportar");
       let libro = XLSX.utils.table_to_book(tabla, {sheet: "Base_de_Datos"});
-      XLSX.writeFile(libro, "Contratos_LockerApp_FEUST.xlsx");
+      XLSX.writeFile(libro, "Contratos_Global_LockerApp.xlsx");
     }
 
     function exportarPDF() {
       let elemento = document.getElementById("area-imprimir");
-      let opciones = { margin: 10, filename: 'Reporte_Oficial_LockerApp.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+      let opciones = { margin: 10, filename: 'Reporte_Global.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
       html2pdf().set(opciones).from(elemento).save();
     }
 
     cargarPanel();
-    setInterval(cargarPanel, 15000);
+    setInterval(cargarPanel, 15000); // Refresca cada 15 seg
   </script>
 </body>
 </html>
