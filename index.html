@@ -88,7 +88,7 @@
   </div>
 
   <script>
-    let currentBase64 = "";
+let currentBase64 = "";
     let currentFileName = "";
 
     async function cargarPanel() {
@@ -102,7 +102,7 @@
           const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
           if (resReportes.ok) reportes = await resReportes.json();
         } catch (e) {
-          console.log("Servidor de reportes respondiendo...", e);
+          console.log("Servidor de reportes...", e);
         }
         
         let totalIngresos = contratos.length * 10000; 
@@ -110,23 +110,34 @@
         document.getElementById('kpi-contratos').innerText = contratos.length;
         
         if (contratos.length === 0) {
-          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados en esta tabla aún.</td></tr>`;
+          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados aún.</td></tr>`;
           return;
         }
 
         tabla.innerHTML = contratos.map(c => {
           const correoSeguro = c.correo || "estudiante@sin-correo.cl";
           const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
-          const nLocker = c.n_casillero || 'N/A';
           const pisoSeguro = c.piso || 'Sede Central';
+          
+          // 🧠 DETECTOR AUTOMÁTICO DE COLUMNAS (Encuentra el dato sin importar el nombre)
+          const nLocker = c.n_casillero || c.casillero || c.locker || c.id_casillero || c.numero_locker || 'N/A';
+          const docComprobante = c.comprobanteBase64 || c.comprobante || c.pago || c.foto_comprobante || c.comprobante_pago || null;
+          const docFirma = c.firmaBase64 || c.firma || c.foto_firma || c.firma_digital || null;
 
+          // Verificamos si tiene una falla reportada
           const tieneFalla = reportes.some(r => {
             const accionStr = r.accion ? String(r.accion) : "";
             return accionStr.includes(String(nLocker)) || r.correo === correoSeguro;
           });
 
+          // Si tiene falla, mostramos el botón de "Resolver"
           const estadoHTML = tieneFalla 
-            ? `<span class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-black animate-pulse border border-red-200 shadow-sm">🚨 Falla Reportada</span>`
+            ? `<div class="flex flex-col gap-2 items-center">
+                 <span class="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-xs font-black animate-pulse border border-red-200">🚨 Falla Reportada</span>
+                 <button onclick="marcarComoSolucionado('${correoSeguro}')" class="bg-gray-800 hover:bg-black text-white text-[10px] px-3 py-1.5 rounded-md font-bold transition-all shadow-md">
+                   🛠️ Marcar Solucionado
+                 </button>
+               </div>`
             : `<span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-black border border-green-200 shadow-sm">✅ Operativo</span>`;
 
           return `
@@ -141,10 +152,10 @@
             </td>
             <td class="p-4 text-center">
               <div class="flex justify-center gap-2">
-                <button onclick="abrirVisor('Comprobante', '${c.comprobanteBase64}', '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                <button onclick="abrirVisor('Comprobante', \`${docComprobante}\`, '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
                   💰 Pago
                 </button>
-                <button onclick="abrirVisor('Firma', '${c.firmaBase64}', '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                <button onclick="abrirVisor('Firma', \`${docFirma}\`, '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
                   ✍️ Firma
                 </button>
               </div>
@@ -156,14 +167,30 @@
         `}).join('');
 
       } catch (error) {
-        console.error("Error detectado:", error);
-        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización con el servidor de Render.</td></tr>`;
+        console.error("Error en la carga:", error);
+      }
+    }
+
+    // 🚀 NUEVA FUNCIÓN PARA EL PROFESOR: MARCAR SOLUCIONADO
+    async function marcarComoSolucionado(correoAlumno) {
+      if(confirm("¿Confirmas que el personal técnico ya reparó el casillero de este alumno?")) {
+        try {
+          await fetch('https://lockerapp-servidor.onrender.com/api/resolver_falla', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ correo: correoAlumno })
+          });
+          alert("✅ Problema marcado como solucionado.");
+          cargarPanel(); // Recarga la tabla para quitar la etiqueta roja
+        } catch (e) {
+          alert("Error de conexión al solucionar.");
+        }
       }
     }
 
     function abrirVisor(tipo, base64Str, alumno) {
       if (!base64Str || base64Str === "undefined" || base64Str === "null") {
-        alert("Este documento no está disponible.");
+        alert(`El alumno ${alumno} no subió este documento o el formato no es válido.`);
         return;
       }
       currentBase64 = base64Str.startsWith('data:image') ? base64Str : 'data:image/png;base64,' + base64Str;
@@ -207,6 +234,10 @@
       });
     }
 
+    function alertaReseteo() {
+      alert("🚨 Modo Pruebas: Limpia las tablas en el Table Editor de Supabase.");
+    }
+
     function exportarExcel() {
       let tabla = document.getElementById("tabla-exportar");
       let libro = XLSX.utils.table_to_book(tabla, {sheet: "Base_de_Datos"});
@@ -220,7 +251,7 @@
     }
 
     cargarPanel();
-    setInterval(cargarPanel, 15000);
+    setInterval(cargarPanel, 10000);
   </script>
 </body>
 </html>
