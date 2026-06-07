@@ -10,61 +10,55 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-  <header class="bg-purple-700 text-white p-5 shadow-md flex justify-between items-center">
-    <h1 class="text-2xl font-black tracking-wider">🔒 LOCKERAPP ADMIN</h1>
-    <div class="flex gap-2">
-      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-bold text-sm shadow transition-all flex items-center gap-2">
+  <header class="bg-purple-800 text-white p-5 shadow-lg flex justify-between items-center">
+    <h1 class="text-2xl font-black tracking-wider flex items-center gap-2">
+      <span>🔒</span> LOCKERAPP ADMIN
+    </h1>
+    <div class="flex gap-3">
+      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded font-bold text-sm shadow transition-all">
         📊 Descargar Excel
       </button>
-      <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-bold text-sm shadow transition-all flex items-center gap-2">
+      <button onclick="exportarPDF()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-bold text-sm shadow transition-all">
         📄 Descargar PDF
+      </button>
+      <button onclick="alertaReseteo()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-bold text-sm shadow transition-all border border-red-400">
+        ⚠️ Formatear Pruebas
       </button>
     </div>
   </header>
 
   <main class="p-6 max-w-7xl mx-auto" id="area-imprimir">
     
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-green-500">
-        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Recaudados</p>
-        <h3 class="text-3xl font-black text-gray-800 mt-2" id="kpi-ingresos">$0 CLP</h3>
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-white p-6 rounded-xl shadow-sm border-l-8 border-green-500">
+        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Recaudados (FEUST)</p>
+        <h3 class="text-4xl font-black text-gray-800 mt-2" id="kpi-ingresos">$0</h3>
       </div>
-      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-blue-500">
-        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Contratos Activos</p>
-        <h3 class="text-3xl font-black text-gray-800 mt-2" id="kpi-contratos">0</h3>
-      </div>
-      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-red-500">
-        <p class="text-red-500 font-bold uppercase text-xs tracking-wider">⚠️ Fallas Reportadas</p>
-        <h3 class="text-3xl font-black text-gray-800 mt-2" id="kpi-fallas">0</h3>
+      <div class="bg-white p-6 rounded-xl shadow-sm border-l-8 border-blue-500">
+        <p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Contratos Universitarios Activos</p>
+        <h3 class="text-4xl font-black text-gray-800 mt-2" id="kpi-contratos">0</h3>
       </div>
     </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+      <div class="p-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-extrabold text-gray-800">📚 Base de Datos de Arriendos</h2>
+      </div>
       
-      <div class="bg-white p-6 rounded-2xl shadow-sm lg:col-span-2">
-        <h2 class="text-lg font-extrabold text-gray-800 mb-4">📝 Base de Datos de Arriendos</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse" id="tabla-exportar">
-            <thead>
-              <tr class="bg-gray-50 text-gray-500 text-xs uppercase font-bold border-b">
-                <th class="p-3">Estudiante</th>
-                <th class="p-3">Ubicación</th>
-                <th class="p-3">Locker</th>
-                <th class="p-3 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-contratos">
-              </tbody>
-          </table>
-        </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse" id="tabla-exportar">
+          <thead>
+            <tr class="bg-purple-900 text-white text-xs uppercase font-bold tracking-wider">
+              <th class="p-4">Estudiante / Correo</th>
+              <th class="p-4">Ubicación y Casillero</th>
+              <th class="p-4 text-center">Documentos Legales</th>
+              <th class="p-4 text-center">Estado Técnico</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-contratos" class="divide-y divide-gray-200">
+            </tbody>
+        </table>
       </div>
-
-      <div class="bg-white p-6 rounded-2xl shadow-sm">
-        <h2 class="text-lg font-extrabold text-red-600 mb-4">🚨 Alertas Técnicas</h2>
-        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2" id="contenedor-reportes">
-          </div>
-      </div>
-
     </div>
   </main>
 
@@ -73,79 +67,87 @@
       try {
         // Cargar Contratos
         const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
-        const contratos = await resContratos.json();
+        let contratos = [];
+        if (resContratos.ok) contratos = await resContratos.json();
+
+        // Cargar Reportes (Para saber si hay fallas)
+        const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
+        let reportes = [];
+        if (resReportes.ok) reportes = await resReportes.json();
         
+        // Actualizar KPIs
         let totalIngresos = contratos.length * 10000; 
-        document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')} CLP`;
+        document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
         document.getElementById('kpi-contratos').innerText = contratos.length;
 
         const tabla = document.getElementById('tabla-contratos');
-        tabla.innerHTML = contratos.map(c => `
-          <tr class="border-b text-sm text-gray-700 hover:bg-gray-50">
-            <td class="p-3 font-semibold">${c.correo || 'Alumno'}</td>
-            <td class="p-3 text-gray-500">${c.piso || 'Sede Central'}</td>
-            <td class="p-3 font-bold text-purple-700">#${c.n_casillero || 'N/A'}</td>
-            <td class="p-3 text-center">
-              <button onclick="editarRegistro('${c.id}')" class="text-blue-500 hover:underline mr-2 font-bold">Editar</button>
-              <button onclick="verDocumentos('${c.comprobanteBase64}', '${c.firmaBase64}')" class="text-purple-500 hover:underline font-bold">Docs</button>
-            </td>
-          </tr>
-        `).join('');
-
-        // Cargar Reportes
-        const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
-        const reportes = await resReportes.json();
-        document.getElementById('kpi-fallas').innerText = reportes.length;
-
-        const contenedor = document.getElementById('contenedor-reportes');
-        if(reportes.length === 0) {
-          contenedor.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">No hay fallas reportadas. ✅</p>';
+        
+        if (contratos.length === 0) {
+          tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-500 font-bold">No hay contratos registrados aún en la base de datos.</td></tr>`;
           return;
         }
 
-        contenedor.innerHTML = reportes.map(r => `
-          <div class="bg-red-50 border border-red-200 p-4 rounded-xl flex flex-col gap-2">
-            <span class="text-xs text-gray-400 font-medium">${new Date(r.fecha).toLocaleTimeString()}</span>
-            <p class="text-xs text-gray-800 font-bold">${r.accion}</p>
-            <button class="mt-2 bg-red-600 text-white font-bold text-xs py-2 rounded-lg">🔧 Despachar Técnico</button>
-          </div>
-        `).join('');
+        tabla.innerHTML = contratos.map(c => {
+          // Verificar si este locker en particular tiene un reporte de falla
+          const tieneFalla = reportes.some(r => r.accion.includes(c.n_casillero) || r.correo === c.correo);
+          
+          const estadoHTML = tieneFalla 
+            ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">🚨 Requiere Técnico</span>`
+            : `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">✅ Operativo</span>`;
+
+          return `
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="p-4">
+              <p class="font-bold text-gray-800 text-sm">${c.correo.split('@')[0].toUpperCase()}</p>
+              <p class="text-xs text-gray-500">${c.correo}</p>
+            </td>
+            <td class="p-4">
+              <p class="font-bold text-purple-700 text-lg">Locker #${c.n_casillero || 'N/A'}</p>
+              <p class="text-xs text-gray-500 uppercase font-semibold">${c.piso || 'Sede Central'}</p>
+            </td>
+            <td class="p-4 text-center">
+              <div class="flex justify-center gap-2">
+                <button onclick="verDoc('Comprobante')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                  💰 Comprobante
+                </button>
+                <button onclick="verDoc('Firma')" class="bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                  ✍️ Firma
+                </button>
+              </div>
+            </td>
+            <td class="p-4 text-center">
+              ${estadoHTML}
+            </td>
+          </tr>
+        `}).join('');
 
       } catch (error) {
-        console.error("Error cargando panel admin:", error);
+        console.error("Error cargando base de datos:", error);
       }
     }
 
-    // Funciones de simulación de edición (Para la presentación)
-    function editarRegistro(id) {
-      alert("Abriendo panel de edición para el registro " + id + ". (Función conectada a la base de datos central).");
+    function verDoc(tipo) {
+      alert(`Abriendo bóveda de seguridad: Mostrando ${tipo} del estudiante para auditoría.`);
     }
 
-    function verDocumentos(comprobante, firma) {
-      alert("Apertura de bóveda digital. Comprobante y firma listos para auditoría.");
+    function alertaReseteo() {
+      alert("🚨 MODO PRESENTACIÓN 🚨\n\nPara vaciar el panel y dejarlo en cero para tu profesor, abre el 'Table Editor' en tu cuenta de Supabase y borra las filas de la tabla 'contratos_firmados'. El panel se actualizará automáticamente.");
     }
 
-    // EXPORTACIÓN A EXCEL
     function exportarExcel() {
       let tabla = document.getElementById("tabla-exportar");
-      let libro = XLSX.utils.table_to_book(tabla, {sheet: "Contratos"});
-      XLSX.writeFile(libro, "Reporte_LockerApp.xlsx");
+      let libro = XLSX.utils.table_to_book(tabla, {sheet: "Base_de_Datos"});
+      XLSX.writeFile(libro, "Contratos_LockerApp_FEUST.xlsx");
     }
 
-    // EXPORTACIÓN A PDF
     function exportarPDF() {
       let elemento = document.getElementById("area-imprimir");
-      let opciones = {
-        margin:       10,
-        filename:     'Reporte_LockerApp_Admin.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      };
+      let opciones = { margin: 10, filename: 'Reporte_Oficial_LockerApp.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
       html2pdf().set(opciones).from(elemento).save();
     }
 
     cargarPanel();
+    setInterval(cargarPanel, 15000);
   </script>
 </body>
 </html>
