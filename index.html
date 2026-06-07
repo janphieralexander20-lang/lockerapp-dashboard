@@ -22,7 +22,7 @@
       <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">
         📄 PDF Global
       </button>
-      <button id="btn-formatear" onclick="alertaReseteo()" class="bg-gray-900 hover:bg-black px-4 py-2 rounded-lg font-bold text-sm shadow-md border border-gray-600 transition-all">
+      <button onclick="alertaReseteo()" class="bg-gray-900 hover:bg-black px-4 py-2 rounded-lg font-bold text-sm shadow-md border border-gray-600 transition-all">
         ⚠️ Formatear Pruebas
       </button>
     </div>
@@ -92,27 +92,25 @@
       </div>
     </div>
   </div>
-// Variables globales para las descargas individuales
+
+  <script>
     let currentBase64 = "";
     let currentFileName = "";
 
     async function cargarPanel() {
       const tabla = document.getElementById('tabla-contratos');
       try {
-        // 1. Intentar cargar los contratos de Render
         const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
         let contratos = resContratos.ok ? await resContratos.json() : [];
 
-        // 2. Intentar cargar los reportes en un bloque aislado (si falla, no congela la tabla principal)
         let reportes = [];
         try {
           const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
           if (resReportes.ok) reportes = await resReportes.json();
         } catch (e) {
-          console.log("Nota: La ruta de reportes aún no responde en Render:", e);
+          console.log("Servidor de reportes cargando...", e);
         }
         
-        // Actualizar indicadores superiores
         let totalIngresos = contratos.length * 10000; 
         document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
         document.getElementById('kpi-contratos').innerText = contratos.length;
@@ -122,13 +120,11 @@
           return;
         }
 
-        // Renderizar filas con protección absoluta contra nulos y tipos de datos
         tabla.innerHTML = contratos.map(c => {
           const correoSeguro = c.correo || "estudiante@sin-correo.cl";
           const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
           const nLocker = c.n_casillero || 'N/A';
 
-          // Evitamos caídas si r.accion viene vacío o si nLocker es un número puro
           const tieneFalla = reportes.some(r => {
             const accionStr = r.accion ? String(r.accion) : "";
             return accionStr.includes(String(nLocker)) || r.correo === correoSeguro;
@@ -166,8 +162,7 @@
 
       } catch (error) {
         console.error("Error detectado:", error);
-        // MENSAJE DE ERROR VISUAL: Si algo falla, el profesor verá esto en lugar de un congelamiento
-        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización. Asegúrate de que el backend en Render esté encendido y que hayas ejecutado 'git push' con los últimos cambios del servidor.</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">⚠️ Error de sincronización. Asegúrate de que el backend en Render esté encendido.</td></tr>`;
       }
     }
 
@@ -210,9 +205,9 @@
         const nombre = fila.querySelector(".nombre-alumno").innerText.toUpperCase();
         const locker = fila.querySelector(".locker-alumno").innerText.toUpperCase();
         if (nombre.indexOf(input) > -1 || locker.indexOf(input) > -1) {
-          fila.style.style.display = "";
+          fila.style.display = "";
         } else {
-          fila.style.style.display = "none";
+          fila.style.display = "none";
         }
       });
     }
@@ -233,9 +228,8 @@
       html2pdf().set(opciones).from(elemento).save();
     }
 
-    // Ejecución inicial y temporizador seguro
     cargarPanel();
     setInterval(cargarPanel, 15000);
-  
+  </script>
 </body>
 </html>
