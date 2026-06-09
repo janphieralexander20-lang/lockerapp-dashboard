@@ -16,17 +16,12 @@
       <span>🔒</span> LOCKERAPP ADMIN
     </h1>
     <div class="flex flex-wrap justify-center gap-3">
-      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">
-        📊 Excel Global
-      </button>
-      <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">
-        📄 PDF Global
-      </button>
+      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">📊 Excel Global</button>
+      <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">📄 PDF Global</button>
     </div>
   </header>
 
   <main class="p-6 max-w-7xl mx-auto" id="area-imprimir">
-    
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-green-500 flex justify-between items-center">
         <div>
@@ -73,23 +68,19 @@
       <button onclick="cerrarModal()" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-3xl font-black">&times;</button>
       <h3 id="modal-titulo" class="text-2xl font-black text-purple-800 mb-1">Documento</h3>
       <p id="modal-subtitulo" class="text-sm text-gray-500 mb-6 font-semibold">Visualización Segura</p>
+      
       <div class="bg-gray-100 rounded-lg p-2 mb-6 min-h-[200px] flex items-center justify-center border border-gray-200">
         <img id="modal-img" src="" alt="Documento" class="max-h-80 mx-auto rounded shadow-sm">
       </div>
+
       <div class="flex justify-center gap-4">
-        <button onclick="descargarIndividual('png')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-          🖼️ Bajar PNG
-        </button>
-        <button onclick="descargarIndividual('pdf')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-          📄 Bajar PDF
-        </button>
+        <button onclick="descargarIndividual('png')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">🖼️ Ver Original</button>
       </div>
     </div>
   </div>
 
   <script>
-let currentBase64 = "";
-    let currentFileName = "";
+    let currentUrl = "";
 
     async function cargarPanel() {
       const tabla = document.getElementById('tabla-contratos');
@@ -101,9 +92,7 @@ let currentBase64 = "";
         try {
           const resReportes = await fetch('https://lockerapp-servidor.onrender.com/api/ver_reportes');
           if (resReportes.ok) reportes = await resReportes.json();
-        } catch (e) {
-          console.log("Servidor de reportes...", e);
-        }
+        } catch (e) { }
         
         let totalIngresos = contratos.length * 10000; 
         document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
@@ -117,20 +106,19 @@ let currentBase64 = "";
         tabla.innerHTML = contratos.map(c => {
           const correoSeguro = c.correo || "estudiante@sin-correo.cl";
           const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
-          const pisoSeguro = c.piso || 'Sede Central';
+          const pisoSeguro = c.piso || c.torre || 'Sede Central';
           
-          // 🧠 DETECTOR AUTOMÁTICO DE COLUMNAS (Encuentra el dato sin importar el nombre)
-          const nLocker = c.n_casillero || c.casillero || c.locker || c.id_casillero || c.numero_locker || 'N/A';
-          const docComprobante = c.comprobanteBase64 || c.comprobante || c.pago || c.foto_comprobante || c.comprobante_pago || null;
-          const docFirma = c.firmaBase64 || c.firma || c.foto_firma || c.firma_digital || null;
+          const nLocker = c.n_casillero || c.id_casillero || 'N/A';
+          
+          // 🚀 AQUÍ LEEMOS TUS URLS DE SUPABASE EXACTAMENTE
+          const docComprobante = c.comprobante_url || c.url_comprobante || null;
+          const docFirma = c.firma_url || null;
 
-          // Verificamos si tiene una falla reportada
           const tieneFalla = reportes.some(r => {
             const accionStr = r.accion ? String(r.accion) : "";
             return accionStr.includes(String(nLocker)) || r.correo === correoSeguro;
           });
 
-          // Si tiene falla, mostramos el botón de "Resolver"
           const estadoHTML = tieneFalla 
             ? `<div class="flex flex-col gap-2 items-center">
                  <span class="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-xs font-black animate-pulse border border-red-200">🚨 Falla Reportada</span>
@@ -152,102 +140,64 @@ let currentBase64 = "";
             </td>
             <td class="p-4 text-center">
               <div class="flex justify-center gap-2">
-                <button onclick="abrirVisor('Comprobante', \`${docComprobante}\`, '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
-                  💰 Pago
-                </button>
-                <button onclick="abrirVisor('Firma', \`${docFirma}\`, '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
-                  ✍️ Firma
-                </button>
+                <button onclick="abrirVisor('Comprobante', '${docComprobante}', '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">💰 Pago</button>
+                <button onclick="abrirVisor('Firma', '${docFirma}', '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">✍️ Firma</button>
               </div>
             </td>
-            <td class="p-4 text-center">
-              ${estadoHTML}
-            </td>
-          </tr>
-        `}).join('');
+            <td class="p-4 text-center">${estadoHTML}</td>
+          </tr>`
+        }).join('');
 
       } catch (error) {
-        console.error("Error en la carga:", error);
+        console.error(error);
       }
     }
 
-    // 🚀 NUEVA FUNCIÓN PARA EL PROFESOR: MARCAR SOLUCIONADO
     async function marcarComoSolucionado(correoAlumno) {
       if(confirm("¿Confirmas que el personal técnico ya reparó el casillero de este alumno?")) {
         try {
-          await fetch('https://lockerapp-servidor.onrender.com/api/resolver_falla', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ correo: correoAlumno })
-          });
+          await fetch('https://lockerapp-servidor.onrender.com/api/resolver_falla', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ correo: correoAlumno }) });
           alert("✅ Problema marcado como solucionado.");
-          cargarPanel(); // Recarga la tabla para quitar la etiqueta roja
-        } catch (e) {
-          alert("Error de conexión al solucionar.");
-        }
+          cargarPanel(); 
+        } catch (e) { alert("Error de conexión al solucionar."); }
       }
     }
 
-    function abrirVisor(tipo, base64Str, alumno) {
-      if (!base64Str || base64Str === "undefined" || base64Str === "null") {
-        alert(`El alumno ${alumno} no subió este documento o el formato no es válido.`);
+    // VISOR PREPARADO PARA ENLACES DE STORAGE
+    function abrirVisor(tipo, urlImagen, alumno) {
+      if (!urlImagen || urlImagen === "undefined" || urlImagen === "null") {
+        alert("Este documento aún no se ha subido a la nube de Supabase.");
         return;
       }
-      currentBase64 = base64Str.startsWith('data:image') ? base64Str : 'data:image/png;base64,' + base64Str;
-      currentFileName = `${tipo}_${alumno}`;
+      currentUrl = urlImagen;
       document.getElementById('modal-titulo').innerText = tipo;
       document.getElementById('modal-subtitulo').innerText = `Estudiante: ${alumno}`;
-      document.getElementById('modal-img').src = currentBase64;
+      document.getElementById('modal-img').src = currentUrl;
       document.getElementById('modal-doc').classList.remove('hidden');
     }
 
-    function cerrarModal() {
-      document.getElementById('modal-doc').classList.add('hidden');
-    }
+    function cerrarModal() { document.getElementById('modal-doc').classList.add('hidden'); }
 
-    function descargarIndividual(formato) {
-      if (formato === 'png') {
-        const link = document.createElement('a');
-        link.href = currentBase64;
-        link.download = `${currentFileName}.png`;
-        link.click();
-      } else if (formato === 'pdf') {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
-        pdf.text(`Documento: ${currentFileName}`, 10, 10);
-        pdf.addImage(currentBase64, 'PNG', 10, 20, 180, 0); 
-        pdf.save(`${currentFileName}.pdf`);
-      }
+    // DESCARGA: Abre la URL original en una pestaña nueva para que el profesor la vea en máxima calidad
+    function descargarIndividual() {
+      window.open(currentUrl, '_blank');
     }
 
     function filtrarTabla() {
       const input = document.getElementById("buscador").value.toUpperCase();
-      const filas = document.querySelectorAll(".fila-alumno");
-      filas.forEach(fila => {
-        const nombre = fila.querySelector(".nombre-alumno").innerText.toUpperCase();
-        const locker = fila.querySelector(".locker-alumno").innerText.toUpperCase();
-        if (nombre.indexOf(input) > -1 || locker.indexOf(input) > -1) {
-          fila.style.display = "";
-        } else {
-          fila.style.display = "none";
-        }
+      document.querySelectorAll(".fila-alumno").forEach(fila => {
+        const txt = fila.innerText.toUpperCase();
+        fila.style.display = txt.indexOf(input) > -1 ? "" : "none";
       });
     }
 
-    function alertaReseteo() {
-      alert("🚨 Modo Pruebas: Limpia las tablas en el Table Editor de Supabase.");
-    }
-
     function exportarExcel() {
-      let tabla = document.getElementById("tabla-exportar");
-      let libro = XLSX.utils.table_to_book(tabla, {sheet: "Base_de_Datos"});
-      XLSX.writeFile(libro, "Contratos_Global_LockerApp.xlsx");
+      let libro = XLSX.utils.table_to_book(document.getElementById("tabla-exportar"), {sheet: "Base_de_Datos"});
+      XLSX.writeFile(libro, "Contratos_LockerApp.xlsx");
     }
 
     function exportarPDF() {
-      let elemento = document.getElementById("area-imprimir");
-      let opciones = { margin: 10, filename: 'Reporte_Global.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-      html2pdf().set(opciones).from(elemento).save();
+      html2pdf().set({ margin: 10, filename: 'Reporte.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(document.getElementById("area-imprimir")).save();
     }
 
     cargarPanel();
