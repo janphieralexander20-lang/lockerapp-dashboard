@@ -13,26 +13,31 @@
 
   <header class="bg-gradient-to-r from-purple-800 to-purple-600 text-white p-5 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
     <h1 class="text-2xl font-black tracking-wider flex items-center gap-2">
-      <span>🔒</span> LOCKERAPP ADMIN
+      <span>🔒</span> LOCKERAPP CENTRAL FEUST
     </h1>
     <div class="flex flex-wrap justify-center gap-3">
-      <button onclick="exportarExcel()" class="bg-green-500 hover:bg-green-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">📊 Excel Global</button>
-      <button onclick="exportarPDF()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">📄 PDF Global</button>
+      <button onclick="exportarExcelGlobal()" class="bg-green-500 hover:bg-green-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all flex items-center gap-2">
+        📊 Excel Global (Todos)
+      </button>
+      <button onclick="exportarPDFGlobal()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all flex items-center gap-2">
+        📄 PDF Global (Informe)
+      </button>
     </div>
   </header>
 
   <main class="p-6 max-w-7xl mx-auto" id="area-imprimir">
+    
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-green-500 flex justify-between items-center">
         <div>
-          <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Ingresos Recaudados (FEUST)</p>
+          <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Ingresos Totales (FEUST)</p>
           <h3 class="text-4xl font-black text-gray-800 mt-1" id="kpi-ingresos">$0</h3>
         </div>
         <div class="text-green-200 text-5xl">💰</div>
       </div>
       <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-blue-500 flex justify-between items-center">
         <div>
-          <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Contratos Activos</p>
+          <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Contratos Totales Activos</p>
           <h3 class="text-4xl font-black text-gray-800 mt-1" id="kpi-contratos">0</h3>
         </div>
         <div class="text-blue-200 text-5xl">📝</div>
@@ -41,22 +46,22 @@
 
     <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
       <div class="p-6 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h2 class="text-xl font-extrabold text-gray-800">📚 Base de Datos de Arriendos</h2>
-        <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="🔍 Buscar alumno o locker..." class="px-4 py-2 rounded-lg border border-gray-300 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <h2 class="text-xl font-extrabold text-gray-800">📚 Registro de Estudiantes y Documentación</h2>
+        <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="🔍 Buscar por rut, correo o casillero..." class="px-4 py-2 rounded-lg border border-gray-300 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-purple-500">
       </div>
       
       <div class="overflow-x-auto min-h-[300px]">
         <table class="w-full text-left border-collapse" id="tabla-exportar">
           <thead>
             <tr class="bg-purple-900 text-white text-xs uppercase font-bold tracking-wider">
-              <th class="p-4">Estudiante / Correo</th>
-              <th class="p-4">Ubicación y Casillero</th>
-              <th class="p-4 text-center">Documentos Legales</th>
-              <th class="p-4 text-center">Estado Técnico</th>
+              <th class="p-4">Estudiante / Cuenta</th>
+              <th class="p-4">Ubicación Asignada</th>
+              <th class="p-4 text-center">Bóveda Digital (Documentos)</th>
+              <th class="p-4 text-center">Acción / Estado</th>
             </tr>
           </thead>
           <tbody id="tabla-contratos" class="divide-y divide-gray-100">
-            <tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">Cargando base de datos segura...</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-gray-400">Cargando base de datos universitaria...</td></tr>
           </tbody>
         </table>
       </div>
@@ -66,27 +71,35 @@
   <div id="modal-doc" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 backdrop-blur-sm transition-all">
     <div class="bg-white rounded-2xl p-6 w-11/12 max-w-lg text-center relative shadow-2xl">
       <button onclick="cerrarModal()" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-3xl font-black">&times;</button>
-      <h3 id="modal-titulo" class="text-2xl font-black text-purple-800 mb-1">Documento</h3>
-      <p id="modal-subtitulo" class="text-sm text-gray-500 mb-6 font-semibold">Visualización Segura</p>
       
-      <div class="bg-gray-100 rounded-lg p-2 mb-6 min-h-[200px] flex items-center justify-center border border-gray-200">
-        <img id="modal-img" src="" alt="Documento" class="max-h-80 mx-auto rounded shadow-sm">
+      <h3 id="modal-titulo" class="text-2xl font-black text-purple-800 mb-1">Documento</h3>
+      <p id="modal-subtitulo" class="text-sm text-gray-500 mb-6 font-semibold">Validación de Identidad</p>
+      
+      <div class="bg-gray-100 rounded-lg p-2 mb-6 min-h-[220px] flex items-center justify-center border border-gray-200 overflow-hidden">
+        <img id="modal-img" src="" alt="Cargando archivo..." class="max-h-80 mx-auto rounded shadow-sm object-contain">
       </div>
 
       <div class="flex justify-center gap-4">
-        <button onclick="descargarIndividual('png')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">🖼️ Ver Original</button>
+        <button onclick="bajarArchivo('png')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+          🖼️ Guardar PNG
+        </button>
+        <button onclick="bajarArchivo('pdf')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+          📄 Guardar PDF
+        </button>
       </div>
     </div>
   </div>
 
   <script>
     let currentUrl = "";
+    let currentFileName = "";
+    let listaCompletaContratos = [];
 
     async function cargarPanel() {
       const tabla = document.getElementById('tabla-contratos');
       try {
         const resContratos = await fetch('https://lockerapp-servidor.onrender.com/api/lockers');
-        let contratos = resContratos.ok ? await resContratos.json() : [];
+        listaCompletaContratos = resContratos.ok ? await resContratos.json() : [];
 
         let reportes = [];
         try {
@@ -94,57 +107,65 @@
           if (resReportes.ok) reportes = await resReportes.json();
         } catch (e) { }
         
-        let totalIngresos = contratos.length * 10000; 
+        let totalIngresos = listaCompletaContratos.length * 10000; 
         document.getElementById('kpi-ingresos').innerText = `$${totalIngresos.toLocaleString('es-CL')}`;
-        document.getElementById('kpi-contratos').innerText = contratos.length;
+        document.getElementById('kpi-contratos').innerText = listaCompletaContratos.length;
         
-        if (contratos.length === 0) {
+        if (listaCompletaContratos.length === 0) {
           tabla.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No hay contratos registrados aún.</td></tr>`;
           return;
         }
 
-        tabla.innerHTML = contratos.map(c => {
+        tabla.innerHTML = listaCompletaContratos.map((c, index) => {
           const correoSeguro = c.correo || "estudiante@sin-correo.cl";
           const nombreLimpio = correoSeguro.split('@')[0].toUpperCase();
           const pisoSeguro = c.piso || c.torre || 'Sede Central';
           
-          const nLocker = c.n_casillero || c.id_casillero || 'N/A';
-          
-          // 🚀 AQUÍ LEEMOS TUS URLS DE SUPABASE EXACTAMENTE
-          const docComprobante = c.comprobante_url || c.url_comprobante || null;
-          const docFirma = c.firma_url || null;
+          // Mapeo forzado directo al campo exacto de tu Supabase
+          let nLocker = c.n_casillero;
+          if (nLocker === null || nLocker === undefined) {
+            nLocker = "N/A";
+          }
 
-          const tieneFalla = reportes.some(r => {
-            const accionStr = r.accion ? String(r.accion) : "";
-            return accionStr.includes(String(nLocker)) || r.correo === correoSeguro;
-          });
+          // Captura de enlaces URL de almacenamiento de Supabase Storage
+          const docComprobante = c.comprobante_url || null;
+          const docFirma = c.firma_url || null;
+          const docCarnet = c.carnet_url || null; // 🪪 NUEVA COLUMNA DE CARNET
+
+          const tieneFalla = reportes.some(r => r.correo === correoSeguro);
 
           const estadoHTML = tieneFalla 
-            ? `<div class="flex flex-col gap-2 items-center">
-                 <span class="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-xs font-black animate-pulse border border-red-200">🚨 Falla Reportada</span>
-                 <button onclick="marcarComoSolucionado('${correoSeguro}')" class="bg-gray-800 hover:bg-black text-white text-[10px] px-3 py-1.5 rounded-md font-bold transition-all shadow-md">
-                   🛠️ Marcar Solucionado
-                 </button>
+            ? `<div class="flex flex-col gap-1 items-center">
+                 <span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-black animate-pulse">🚨 Falla</span>
+                 <button onclick="marcarComoSolucionado('${correoSeguro}')" class="bg-gray-800 text-white text-[10px] px-2 py-1 rounded hover:bg-black transition-all">Resolver</button>
                </div>`
-            : `<span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-black border border-green-200 shadow-sm">✅ Operativo</span>`;
+            : `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-black">✅ OK</span>`;
 
           return `
           <tr class="hover:bg-purple-50 transition-colors fila-alumno">
             <td class="p-4">
-              <p class="font-bold text-gray-800 text-sm nombre-alumno">${nombreLimpio}</p>
-              <p class="text-xs text-gray-500">${correoSeguro}</p>
+              <p class="font-bold text-gray-800 text-sm">${nombreLimpio}</p>
+              <p class="text-xs text-gray-400">${correoSeguro}</p>
             </td>
             <td class="p-4">
-              <p class="font-black text-purple-700 text-lg locker-alumno">Locker #${nLocker}</p>
-              <p class="text-xs text-gray-500 uppercase font-bold">${pisoSeguro}</p>
+              <p class="font-black text-purple-700 text-base">Casillero #${nLocker}</p>
+              <p class="text-[11px] text-gray-500 uppercase font-bold">${pisoSeguro}</p>
             </td>
             <td class="p-4 text-center">
-              <div class="flex justify-center gap-2">
-                <button onclick="abrirVisor('Comprobante', '${docComprobante}', '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">💰 Pago</button>
-                <button onclick="abrirVisor('Firma', '${docFirma}', '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">✍️ Firma</button>
+              <div class="flex justify-center gap-1.5">
+                <button onclick="abrirVisor('Comprobante_Pago', '${docComprobante}', '${nombreLimpio}')" class="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 border border-blue-200 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm">💰 Pago</button>
+                <button onclick="abrirVisor('Firma_Contrato', '${docFirma}', '${nombreLimpio}')" class="bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 border border-purple-200 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm">✍️ Firma</button>
+                <button onclick="abrirVisor('Carnet_Identidad', '${docCarnet}', '${nombreLimpio}')" class="bg-amber-50 hover:bg-amber-600 hover:text-white text-amber-600 border border-amber-200 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm">🪪 Carnet</button>
               </div>
             </td>
-            <td class="p-4 text-center">${estadoHTML}</td>
+            <td class="p-4 text-center">
+              <div class="flex items-center justify-center gap-3">
+                ${estadoHTML}
+                <button onclick="exportarExcelIndividual(${index})" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-md shadow-sm transition-all" title="Descargar Excel de este alumno">
+                  📊 Excel
+                </button>
+              </div>
+            </td>
           </tr>`
         }).join('');
 
@@ -153,24 +174,14 @@
       }
     }
 
-    async function marcarComoSolucionado(correoAlumno) {
-      if(confirm("¿Confirmas que el personal técnico ya reparó el casillero de este alumno?")) {
-        try {
-          await fetch('https://lockerapp-servidor.onrender.com/api/resolver_falla', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ correo: correoAlumno }) });
-          alert("✅ Problema marcado como solucionado.");
-          cargarPanel(); 
-        } catch (e) { alert("Error de conexión al solucionar."); }
-      }
-    }
-
-    // VISOR PREPARADO PARA ENLACES DE STORAGE
     function abrirVisor(tipo, urlImagen, alumno) {
-      if (!urlImagen || urlImagen === "undefined" || urlImagen === "null") {
-        alert("Este documento aún no se ha subido a la nube de Supabase.");
+      if (!urlImagen || urlImagen === "undefined" || urlImagen === "null" || urlImagen === "") {
+        alert(`El alumno ${alumno} aún no registra o no ha subido este archivo.`);
         return;
       }
       currentUrl = urlImagen;
-      document.getElementById('modal-titulo').innerText = tipo;
+      currentFileName = `${tipo}_${alumno}`;
+      document.getElementById('modal-titulo').innerText = tipo.replace('_', ' ');
       document.getElementById('modal-subtitulo').innerText = `Estudiante: ${alumno}`;
       document.getElementById('modal-img').src = currentUrl;
       document.getElementById('modal-doc').classList.remove('hidden');
@@ -178,30 +189,83 @@
 
     function cerrarModal() { document.getElementById('modal-doc').classList.add('hidden'); }
 
-    // DESCARGA: Abre la URL original en una pestaña nueva para que el profesor la vea en máxima calidad
-    function descargarIndividual() {
-      window.open(currentUrl, '_blank');
+    // DESCARGA INDEPENDIENTE COMPROBANTE/FIRMA (PNG Y PDF)
+    function bajarArchivo(formato) {
+      if (formato === 'png') {
+        // Al ser enlaces de Storage, la forma nativa y libre de bloqueos es abrir el enlace original de descarga directa
+        window.open(currentUrl, '_blank');
+      } else if (formato === 'pdf') {
+        // Creamos un PDF dinámico que incluye la foto del documento cargado
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.setFont("helvetica", "bold");
+        pdf.text("LOCKERAPP CENTRAL FEUST - DOCUMENTO OFICIAL", 10, 15);
+        pdf.setFontSize(11);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Archivo: ${currentFileName}`, 10, 23);
+        pdf.text(`Fecha de emision: ${new Date().toLocaleDateString('es-CL')}`, 10, 29);
+        
+        // Inyectamos la imagen del Storage de Supabase en el documento PDF
+        pdf.addImage(currentUrl, 'JPEG', 10, 35, 190, 130);
+        pdf.save(`${currentFileName}.pdf`);
+      }
+    }
+
+    // DESCARGAR EXCEL DE UN SOLO ALUMNO (UNO POR UNO)
+    function exportarExcelIndividual(index) {
+      const alumno = listaCompletaContratos[index];
+      const nombreLimpio = (alumno.correo || "ALUMNO").split('@')[0].toUpperCase();
+      
+      const datosFila = [{
+        "ESTUDIANTE": nombreLimpio,
+        "CORREO": alumno.correo || "N/A",
+        "CASILLERO": alumno.n_casillero || "N/A",
+        "PISO": alumno.piso || "N/A",
+        "TORRE": alumno.torre || "N/A",
+        "MONTO PAGADO": "$10.000 CLP",
+        "URL COMPROBANTE PAGO": alumno.comprobante_url || "No subido",
+        "URL FIRMA DIGITAL": alumno.firma_url || "No subido",
+        "URL CARNET IDENTIDAD": alumno.carnet_url || "No subido"
+      }];
+
+      const hoja = XLSX.utils.json_to_sheet(datosFila);
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, "Ficha Alumno");
+      XLSX.writeFile(libro, `Contrato_Locker_${nombreLimpio}.xlsx`);
+    }
+
+    async function marcarComoSolucionado(correoAlumno) {
+      if(confirm("¿Confirmas que la falla de este casillero ya fue reparada?")) {
+        try {
+          await fetch('https://lockerapp-servidor.onrender.com/api/resolver_falla', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ correo: correoAlumno })
+          });
+          alert("✅ Registro actualizado.");
+          cargarPanel(); 
+        } catch (e) { alert("Error de comunicación."); }
+      }
     }
 
     function filtrarTabla() {
       const input = document.getElementById("buscador").value.toUpperCase();
       document.querySelectorAll(".fila-alumno").forEach(fila => {
-        const txt = fila.innerText.toUpperCase();
-        fila.style.display = txt.indexOf(input) > -1 ? "" : "none";
+        fila.style.display = fila.innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
       });
     }
 
-    function exportarExcel() {
-      let libro = XLSX.utils.table_to_book(document.getElementById("tabla-exportar"), {sheet: "Base_de_Datos"});
-      XLSX.writeFile(libro, "Contratos_LockerApp.xlsx");
+    function exportarExcelGlobal() {
+      let libro = XLSX.utils.table_to_book(document.getElementById("tabla-exportar"), {sheet: "Base_General"});
+      XLSX.writeFile(libro, "Contratos_Globales_LockerApp.xlsx");
     }
 
-    function exportarPDF() {
-      html2pdf().set({ margin: 10, filename: 'Reporte.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(document.getElementById("area-imprimir")).save();
+    function exportarPDFGlobal() {
+      html2pdf().set({ margin: 10, filename: 'Reporte_Global_Gestion.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(document.getElementById("area-imprimir")).save();
     }
 
     cargarPanel();
-    setInterval(cargarPanel, 10000);
+    setInterval(cargarPanel, 12000);
   </script>
 </body>
 </html>
